@@ -15,5 +15,55 @@ MonoBehaviour:
   timeLimit: 50
   rows: 5
   cols: 5
-  cells: 01000000010000000100000001000000010000000100000001000000010000000100000001000000020000000100000002000000020000000100000002000000010000000200000001000000020000000200000001000000020000000200000002000000
+  cells:
+  - type: 2
+    colour: 1
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 1
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 1
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
   buses: 0200000002000000020000000200000002000000
