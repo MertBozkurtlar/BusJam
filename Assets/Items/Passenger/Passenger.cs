@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Visual controller for a passenger. It stores its grid coordinates and
-/// lets the <see cref="LevelManager"/> know when it is clicked.
+/// lets the <see cref="GameController"/> know when it is clicked.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class Passenger : MonoBehaviour
@@ -14,14 +14,14 @@ public class Passenger : MonoBehaviour
     public ColorId Colour { get; private set; }
     private bool _isWaiting = false;
     
-    private LevelManager manager;
+    private GameController manager;
 
     public void SetWaiting()
     {
         _isWaiting = true;
     }
 
-    public void Init(LevelManager mgr, int row, int col, ColorId colour)
+    public void Init(GameController mgr, int row, int col, ColorId colour)
     {
         manager = mgr;
         Row = row;
