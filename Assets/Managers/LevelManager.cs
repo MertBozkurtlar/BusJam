@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using DG.Tweening;
 using UnityEngine;
 
 /// <summary>
@@ -25,25 +27,31 @@ public class LevelManager : MonoBehaviour
     [Header("Layout")]
     [SerializeField] float cellSize = 1f;
     [SerializeField] float busOffset = -3.5f;
+    [SerializeField] int busCapacity = 3;
 
     Transform gridParent, waitingParent, busParent;
     GridModel grid;
 
     readonly Dictionary<(int r, int c, int v), List<Vector2Int>> pathCache = new();
     readonly List<Passenger> passengers = new();
+    readonly Queue<Bus> buses = new();
+    readonly Queue<ColorId> upcomingBusColors = new();
 
-    readonly Queue<int> freeWaitingSlots = new();
+    readonly List<int> freeWaitingSlots = new();
     readonly List<Vector3> waitingPositions = new();
     readonly Dictionary<int, Passenger> waitingOccupancy = new();
 
-    ColorId CurrentBusColour => levelData.buses.Length > 0 ? levelData.buses[0] : 0;
+    private bool isBusAnimationRunning = false;
+    private int pendingDepartures = 0;
+
+    ColorId CurrentBusColour => buses.Count > 0 ? buses.Peek().Colour : 0;
 
     void Start()
     {
         BuildParents();
         BuildGridAndPassengers();
         BuildWaitingArea();
-        SpawnBuses();
+        SpawnInitialBuses();
         ResizeGridPlane();
     }
 
@@ -106,20 +114,37 @@ public class LevelManager : MonoBehaviour
                           new Vector3((i - half) * cellSize, 0f, 0f);
             Instantiate(waitingAreaTilePrefab, pos, Quaternion.identity, waitingParent);
 
-            freeWaitingSlots.Enqueue(i);
+            freeWaitingSlots.Add(i);
             waitingPositions.Add(pos);
             waitingOccupancy[i] = null;
         }
     }
 
-    void SpawnBuses()
+    void SpawnInitialBuses()
     {
-        for (int i = 0; i < levelData.buses.Length; i++)
+        foreach (var color in levelData.buses)
         {
-            Vector3 pos = busAnchor.position + new Vector3(busOffset * i, 0f, 0f);
-            var busObj = Instantiate(busPrefab, pos, Quaternion.identity, busParent);
-            busObj.GetComponent<Bus>()?.SetColour(levelData.buses[i]);
+            upcomingBusColors.Enqueue(color);
         }
+
+        int initialBusCount = Mathf.Min(levelData.buses.Length, 3); // Spawn up to 3 buses initially
+        for (int i = 0; i < initialBusCount; i++)
+        {
+            SpawnNextBus(i);
+        }
+    }
+
+    void SpawnNextBus(int positionIndex)
+    {
+        if (upcomingBusColors.Count == 0) return;
+
+        ColorId color = upcomingBusColors.Dequeue();
+        Vector3 pos = busAnchor.position + new Vector3(busOffset * positionIndex, 0f, 0f);
+        var busObj = Instantiate(busPrefab, pos, Quaternion.identity, busParent);
+        var bus = busObj.GetComponent<Bus>();
+        bus.SetColour(color);
+        bus.busCapacity = busCapacity;
+        buses.Enqueue(bus);
     }
 
     void ResizeGridPlane()
@@ -140,6 +165,8 @@ public class LevelManager : MonoBehaviour
 
     public void OnPassengerClicked(Passenger pv)
     {
+        if (isBusAnimationRunning) return;
+
         int versionBefore = grid.Version;
         var key = (pv.Row, pv.Col, versionBefore);
 
@@ -149,20 +176,16 @@ public class LevelManager : MonoBehaviour
             pathCache[key] = path;
         }
 
-        // No path found at all → give up.
         if (path == null) return;
 
-        // Free the starting cell so others can walk through it.
         grid[pv.Row, pv.Col] = CellState.Empty;
 
-        // Already on the first row → go straight to bus / waiting area.
         if (path.Count == 0)
         {
             NotifyPassengerArrived(pv);
             return;
         }
 
-        // Normal case: follow the computed path.
         pv.PlayPath(path);
     }
 
@@ -216,22 +239,113 @@ public class LevelManager : MonoBehaviour
 
     public void NotifyPassengerArrived(Passenger pv)
     {
-        if (pv.Row != 0) return;   // not on first row
+        if (pv.Row != 0) return;
 
-        if (pv.Colour == CurrentBusColour)
+        if (buses.Count > 0 && pv.Colour == CurrentBusColour && !buses.Peek().IsFull)
         {
-            pv.MoveToPoint(busAnchor.position, 4f,
-                () =>
-                {
-                    passengers.Remove(pv);
-                    Destroy(pv.gameObject);
-                });
+            BoardBus(pv);
         }
-        else if (freeWaitingSlots.Count > 0)
+        else
         {
-            int slot = freeWaitingSlots.Dequeue();
+            GoToWaitingArea(pv);
+        }
+    }
+
+    private void BoardBus(Passenger pv)
+    {
+        var currentBus = buses.Peek();
+        pv.MoveToPoint(busAnchor.position, 4f,
+            () =>
+            {
+                passengers.Remove(pv);
+                currentBus.AddPassenger();
+                Destroy(pv.gameObject);
+                
+                if (currentBus.IsFull)
+                {
+                    pendingDepartures++;
+                    ProcessNextDeparture();
+                }
+            });
+    }
+
+    private void GoToWaitingArea(Passenger pv)
+    {
+        if (freeWaitingSlots.Count > 0)
+        {
+            int slot = freeWaitingSlots[0];
+            freeWaitingSlots.RemoveAt(0);
+            
             waitingOccupancy[slot] = pv;
             pv.MoveToPoint(waitingPositions[slot], 4f);
+        }
+    }
+
+    private void ProcessNextDeparture()
+    {
+        if (isBusAnimationRunning || pendingDepartures == 0) return;
+
+        isBusAnimationRunning = true;
+        pendingDepartures--;
+
+        var departingBus = buses.Dequeue();
+
+        if (buses.Count == 0 && upcomingBusColors.Count == 0)
+        {
+            Debug.Log("Game WON");
+        }
+
+        var sequence = DOTween.Sequence();
+
+        Tween departureTween = departingBus.Depart();
+        var moveUpSequence = DOTween.Sequence();
+        
+        int i = 0;
+        foreach (var bus in buses)
+        {
+            moveUpSequence.Join(bus.transform.DOMoveX(busAnchor.position.x + busOffset * i, 0.5f));
+            i++;
+        }
+
+        moveUpSequence.OnComplete(() =>
+        {
+            SpawnNextBus(buses.Count);
+            isBusAnimationRunning = false;
+            CheckWaitingArea();
+        });
+
+        sequence.Join(departureTween);
+        sequence.Join(moveUpSequence);
+
+        sequence.OnComplete(() =>
+        {
+            ProcessNextDeparture();
+        });
+    }
+
+    private void CheckWaitingArea()
+    {
+        if (buses.Count == 0 || buses.Peek().IsFull) return;
+
+        var currentBus = buses.Peek();
+        var availableSlots = currentBus.busCapacity - currentBus.PassengerCount;
+        var currentBusColor = CurrentBusColour;
+
+        var matchingPassengers = waitingOccupancy
+            .Where(kvp => kvp.Value != null && kvp.Value.Colour == currentBusColor)
+            .Select(kvp => kvp.Value)
+            .Take(availableSlots)
+            .ToList();
+
+        foreach (var passenger in matchingPassengers)
+        {
+            var slot = waitingOccupancy.First(kvp => kvp.Value == passenger).Key;
+            waitingOccupancy[slot] = null;
+            
+            freeWaitingSlots.Add(slot);
+            freeWaitingSlots.Sort();
+
+            BoardBus(passenger);
         }
     }
 }

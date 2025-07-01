@@ -13,33 +13,14 @@ MonoBehaviour:
   m_Name: Level1
   m_EditorClassIdentifier: 
   timeLimit: 50
-  rows: 5
-  cols: 5
+  waitingAreaSize: 5
+  rows: 6
+  cols: 6
   cells:
   - type: 2
     colour: 1
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
   - type: 2
     colour: 1
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
   - type: 2
     colour: 1
   - type: 0
@@ -52,6 +33,46 @@ MonoBehaviour:
     colour: 0
   - type: 0
     colour: 0
+  - type: 2
+    colour: 0
+  - type: 2
+    colour: 0
+  - type: 2
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 1
+    colour: 0
+  - type: 1
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 2
+  - type: 2
+    colour: 2
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 2
   - type: 0
     colour: 0
   - type: 0
@@ -66,4 +87,6 @@ MonoBehaviour:
     colour: 0
   - type: 0
     colour: 0
-  buses: 0200000002000000020000000200000002000000
+  - type: 0
+    colour: 0
+  buses: 020000000000000001000000
