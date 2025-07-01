@@ -1,7 +1,11 @@
-using System.Collections.Generic;
+using System.Collections;          // ← this line is required
+using System.Collections.Generic;  // (keep if you use lists, etc.)
+using UnityEngine;
 using System.Linq;
 using DG.Tweening;
-using UnityEngine;
+using UnityEngine.Events;
+
+enum GameState { Start, Running, GameOver }
 
 /// <summary>
 /// Controller responsible for game and level logic:
@@ -9,20 +13,25 @@ using UnityEngine;
 /// </summary>
 public class GameController : MonoBehaviour
 {
+    public int TimeLeft { get; private set; }
+    public UnityAction OnGameWon;
+    public UnityAction OnGameLost;
+    public UnityAction OnGameReset;
+    
     [Header("Save Asset")] 
-    public SaveData saveData;
+    [SerializeField] SaveData saveData;
 
     [Header("Scene Meta")]
-    public Transform gridAnchor;
-    public Transform waitingAreaAnchor;
-    public Transform busAnchor;
-    public GameObject gridPlane;
+    [SerializeField] Transform gridAnchor;
+    [SerializeField] Transform waitingAreaAnchor;
+    [SerializeField] Transform busAnchor;
+    [SerializeField] GameObject gridPlane;
 
     [Header("Prefabs")]
-    public GameObject gridTilePrefab;
-    public GameObject waitingAreaTilePrefab;
-    public GameObject passengerPrefab;
-    public GameObject busPrefab;
+    [SerializeField] GameObject gridTilePrefab;
+    [SerializeField] GameObject waitingAreaTilePrefab;
+    [SerializeField] GameObject passengerPrefab;
+    [SerializeField] GameObject busPrefab;
 
     [Header("Layout")]
     [SerializeField] float cellSize = 1f;
@@ -32,6 +41,8 @@ public class GameController : MonoBehaviour
     Transform gridParent, waitingParent, busParent;
     GridModel grid;
     private LevelData levelData;
+    private GameState state;
+    private Coroutine timerCoroutine;
 
     readonly Dictionary<(int r, int c, int v), List<Vector2Int>> pathCache = new();
     readonly List<Passenger> passengers = new();
@@ -39,29 +50,36 @@ public class GameController : MonoBehaviour
     readonly Queue<ColorId> upcomingBusColors = new();
     readonly Queue<Passenger> arrivalQueue = new();
 
+    
     readonly List<int> freeWaitingSlots = new();
     readonly List<Vector3> waitingPositions = new();
     readonly Dictionary<int, Passenger> waitingOccupancy = new();
-
+    
     private bool isDepartureSequenceRunning = false;
     private int pendingDepartures = 0;
-    private bool isGameOver = false;
 
     ColorId CurrentBusColour => buses.Count > 0 ? buses.Peek().Colour : 0;
 
     void Start()
     {
         if (saveData == null) return;
+        LoadLevel();
+    }
 
+    public void LoadLevel()
+    {
         string path = $"Levels/Level{saveData.CurrentLevel}";
         Debug.Log($"Loading level: {path}");
         levelData = Resources.Load<LevelData>(path);
+        TimeLeft = levelData.timeLimit;
+        state = GameState.Start;
         
         BuildParents();
         BuildGridAndPassengers();
         BuildWaitingArea();
         SpawnInitialBuses();
         ResizeGridPlane();
+        OnGameReset?.Invoke();
     }
 
     void BuildParents()
@@ -174,7 +192,12 @@ public class GameController : MonoBehaviour
 
     public void OnPassengerClicked(Passenger pv)
     {
-        if (isGameOver) return;
+        if (state == GameState.GameOver) return;
+        if (state == GameState.Start)
+        {
+            state = GameState.Running;
+            timerCoroutine = StartCoroutine(Tick());
+        }
 
         var path = FindPathToFirstRow(pv.Row, pv.Col);
         if (path == null) return;
@@ -306,7 +329,7 @@ public class GameController : MonoBehaviour
 
     private void CheckForGameLost()
     {
-        if (isGameOver) return; 
+        if (state == GameState.GameOver) return; 
 
         if (freeWaitingSlots.Count > 0) return; 
 
@@ -314,9 +337,9 @@ public class GameController : MonoBehaviour
         {
             return; 
         }
-
-        Debug.Log("Game Lost: Waiting area full");
-        isGameOver = true;
+        
+        Debug.Log("Game lost logic reached");
+        GameLost();
     }
 
     private void ProcessNextDeparture()
@@ -330,8 +353,7 @@ public class GameController : MonoBehaviour
 
         if (buses.Count == 0 && upcomingBusColors.Count == 0)
         {
-            Debug.Log("Game WON");
-            isGameOver = true;
+            GameWon();
         }
 
         var sequence = DOTween.Sequence();
@@ -383,5 +405,35 @@ public class GameController : MonoBehaviour
             waitingOccupancy[slot] = null;
             BoardBus(passenger, slot);
         }
+    }
+    
+    IEnumerator Tick() {
+        while (TimeLeft > 0)
+        {
+            yield return new WaitForSeconds(1f);
+            TimeLeft--;
+        }
+        OnTimerEnd();
+    }
+
+    void OnTimerEnd()
+    {
+        Debug.Log("Timer ended");
+        GameLost();
+    }
+
+    void GameWon()
+    {
+        state = GameState.GameOver;
+        StopCoroutine(timerCoroutine);
+        OnGameWon?.Invoke();
+        saveData.NextLevel();
+    }
+
+    void GameLost()
+    {
+        state = GameState.GameOver;   
+        StopCoroutine(timerCoroutine);
+        OnGameLost?.Invoke();
     }
 }

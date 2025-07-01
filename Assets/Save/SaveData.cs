@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SaveData", menuName = "Save/SaveData", order = 1)]
 public class SaveData : ScriptableObject
 {
-    private int currentLevel;
+    [SerializeField] private int currentLevel;
     
     public int CurrentLevel => currentLevel;
 
