@@ -12,8 +12,14 @@ public class Passenger : MonoBehaviour
     public int Row { get; private set; }
     public int Col { get; private set; }
     public ColorId Colour { get; private set; }
-
+    private bool _isWaiting = false;
+    
     private LevelManager manager;
+
+    public void SetWaiting()
+    {
+        _isWaiting = true;
+    }
 
     public void Init(LevelManager mgr, int row, int col, ColorId colour)
     {
@@ -24,7 +30,11 @@ public class Passenger : MonoBehaviour
         GetComponent<Renderer>().material.color = colour.ToUnityColor();
     }
 
-    private void OnMouseDown() => manager.OnPassengerClicked(this);
+    private void OnMouseDown()
+    {
+        if (_isWaiting) return;
+        manager.OnPassengerClicked(this);
+    }
 
     public void PlayPath(IReadOnlyList<Vector2Int> path, float speed = 4f)
     {
