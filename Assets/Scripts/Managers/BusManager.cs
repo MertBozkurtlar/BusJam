@@ -20,13 +20,15 @@ namespace BusJam
         private Transform busContainer;
         private bool isDepartureSequenceRunning = false;
         private int pendingDepartures = 0;
-        
+        private int boardingCount = 0;  // Number of passengers currently moving to the bus
+
         // Properties for other managers or GameStateManager to query the bus queue status
         public bool IsDepartureSequenceRunning => isDepartureSequenceRunning;
         public int PendingDepartures => pendingDepartures;
         public bool HasBus => buses.Count > 0;
         public ColorId CurrentBusColor => (buses.Count > 0 ? buses.Peek().Colour : 0);
         public bool CurrentBusIsFull => (buses.Count > 0 ? buses.Peek().IsFull : false);
+        public bool HasSpaceInBus => (buses.Count > 0 && buses.Peek().PassengerCount + boardingCount < buses.Peek().busCapacity);
 
         /// <summary>Initializes the bus queue for a new level, spawning up to 3 initial buses.</summary>
         public void InitializeBuses(ColorId[] busColorSequence) 
@@ -82,7 +84,8 @@ namespace BusJam
         {
             if (buses.Count == 0) return;
             Bus currentBus = buses.Peek();
-            // Move the passenger to the bus's anchor point
+            // Start moving the passenger to the bus and reserve a spot
+            boardingCount++;
             passenger.MoveToPoint(busAnchor.position, 4f, () =>
             {
                 // Callback after the passenger reaches the bus
@@ -100,6 +103,8 @@ namespace BusJam
                     pendingDepartures++;
                     ProcessNextDeparture();
                 }
+                // Passenger finished boarding, free up the reserved spot
+                boardingCount--;
             });
         }
 
@@ -109,18 +114,18 @@ namespace BusJam
             if (isDepartureSequenceRunning || pendingDepartures == 0) return;
             isDepartureSequenceRunning = true;
             pendingDepartures--;
-            
+
             Bus departingBus = buses.Dequeue();
-            // Check win condition: no more buses remaining to serve and none upcoming
+            // Check win condition: no more buses remaining and none upcoming
             if (buses.Count == 0 && upcomingBusColors.Count == 0) 
             {
                 GameStateManager.Instance.TriggerGameWon();
             }
 
-            // Animate bus departure and queue movement using DOTween
+            // Animate bus departure and shift queue using DOTween
             Sequence sequence = DOTween.Sequence();
-            Tween departureTween = departingBus.Depart();  // bus drives off animation (and destroys itself)
-            // Shift remaining buses forward in queue
+            Tween departureTween = departingBus.Depart();  // bus drives off and destroys itself
+            // Move remaining buses forward in the queue
             Sequence moveUpSequence = DOTween.Sequence();
             int i = 0;
             foreach (var bus in buses) 
@@ -129,18 +134,18 @@ namespace BusJam
                 i++;
             }
 
-            // After buses have moved up, spawn a new bus at the back of the queue (if any remain in the list)
+            // After buses have moved up, spawn a new bus at the back of the queue (if any remain)
             moveUpSequence.OnComplete(() =>
             {
                 SpawnNextBus(buses.Count);
                 isDepartureSequenceRunning = false;
-                // After a new bus arrives, fill it with any waiting passengers of matching color
+                // New bus has arrived – board any waiting passengers of matching color
                 TryFillBusFromWaiting();
                 // Process any passengers that arrived while the departure was in progress
                 GameStateManager.Instance.PassengerManager.ProcessArrivalQueue();
             });
 
-            // Combine departure and queue movement tweens
+            // Play departure and queue shift simultaneously
             sequence.Join(departureTween);
             sequence.Join(moveUpSequence);
             sequence.OnComplete(() =>
@@ -151,7 +156,7 @@ namespace BusJam
         }
 
         /// <summary>
-        /// Attempts to board waiting passengers onto the current bus (after a new bus arrives and space is available).
+        /// Attempts to board waiting passengers onto the current bus after a new bus arrives.
         /// </summary>
         private void TryFillBusFromWaiting() 
         {
@@ -160,11 +165,11 @@ namespace BusJam
             if (currentBus.IsFull) return;
 
             int availableSlots = currentBus.busCapacity - currentBus.PassengerCount;
-            // Get up to 'availableSlots' passengers of the current bus's color from the waiting area
+            // Get up to 'availableSlots' waiting passengers of the current bus's color
             var waitingPassengers = GameStateManager.Instance.PassengerManager.GetWaitingPassengers(currentBus.Colour, availableSlots);
             foreach (var passenger in waitingPassengers) 
             {
-                // Immediately board each waiting passenger (their slots have been freed)
+                // Immediately board each freed waiting passenger onto the bus
                 BoardPassengerOntoBus(passenger);
             }
         }
@@ -187,6 +192,7 @@ namespace BusJam
             buses.Clear();
             isDepartureSequenceRunning = false;
             pendingDepartures = 0;
+            boardingCount = 0;
         }
     }
 }

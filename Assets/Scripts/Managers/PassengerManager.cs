@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace BusJam 
 {
     /// <summary>
-    /// Manages passenger creation, movement, and waiting area interactions (extracted from GameController).
+    /// Manages passenger creation, movement, and waiting area interactions.
     /// </summary>
     public class PassengerManager : MonoBehaviour 
     {
@@ -15,7 +15,7 @@ namespace BusJam
         [SerializeField] private Transform waitingAreaAnchor;
         [SerializeField] private GameObject waitingAreaTilePrefab;
 
-        // Queue for arriving passengers (those who reach the exit row)
+        // Queue for passengers who have reached the exit (front of queue)
         private readonly Queue<Passenger> arrivalQueue = new Queue<Passenger>();
         // Waiting area tracking
         private readonly List<int> freeWaitingSlots = new List<int>();
@@ -37,7 +37,7 @@ namespace BusJam
             Passenger.OnReachedExitRow -= HandlePassengerArrived;
         }
 
-        /// <summary>Resets the PassengerManager, destroying all active passengers and clearing waiting area data.</summary>
+        /// <summary>Resets the PassengerManager, clearing passengers and waiting area.</summary>
         public void Reset()
         {
             // Destroy all active passenger GameObjects
@@ -53,7 +53,7 @@ namespace BusJam
             waitingPositions.Clear();
             waitingOccupancy.Clear();
 
-            // Destroy waiting area tiles if they exist
+            // Destroy waiting area tile visuals
             Transform waitingParent = transform.Find("WaitingArea");
             if (waitingParent != null)
             {
@@ -75,7 +75,7 @@ namespace BusJam
                         Vector3 worldPos = GameStateManager.Instance.GridManager.GridToWorld(r, c);
                         GameObject pObj = Instantiate(passengerPrefab, worldPos, Quaternion.identity);
                         Passenger passenger = pObj.GetComponent<Passenger>();
-                        // Initialize passenger data (no direct GameController reference needed)
+                        // Initialize passenger data
                         passenger.Init(r, c, cell.colour, GameStateManager.Instance.GridManager);
                         activePassengers.Add(passenger);
                     }
@@ -106,20 +106,20 @@ namespace BusJam
             }
         }
 
-        /// <summary>Handles a passenger being clicked by the player. Starts movement or game if needed.</summary>
+        /// <summary>Handles a passenger being clicked by the player (starts movement).</summary>
         private void HandlePassengerClicked(Passenger passenger) 
         {
             // Prevent interaction if game is over
             if (GameStateManager.Instance && GameStateManager.Instance.IsGameOver) return;
 
-            // Start the game on the first click (timer begins)
+            // Start the game timer on first click
             GameStateManager.Instance.StartGame();
 
             // Find a path from the passenger's current position to the exit (top row)
             List<Vector2Int> path = GameStateManager.Instance.GridManager.FindPathToFirstRow(passenger.Row, passenger.Col);
             if (path == null) 
             {
-                // No path found (blocked) – do nothing
+                // No path found – do nothing
                 return;
             }
 
@@ -128,7 +128,7 @@ namespace BusJam
 
             if (path.Count == 0) 
             {
-                // Passenger is already at the exit row, treat as arrived immediately
+                // Already at exit row
                 HandlePassengerArrived(passenger);
             } 
             else 
@@ -138,40 +138,69 @@ namespace BusJam
             }
         }
 
-        /// <summary>Handles a passenger reaching the exit row of the grid.</summary>
+        /// <summary>Handles a passenger reaching the exit row (front of queue).</summary>
         private void HandlePassengerArrived(Passenger passenger) 
         {
-            if (passenger.Row != 0) return;  // Only process if at first row (exit)
+            if (passenger.Row != 0) return;  // Only process if at first row
 
-            arrivalQueue.Enqueue(passenger);
-            // If no bus departure is in progress, immediately process this arrival
-            if (!GameStateManager.Instance.BusManager.IsDepartureSequenceRunning) 
+            var busMgr = GameStateManager.Instance.BusManager;
+            if (busMgr.IsDepartureSequenceRunning) 
             {
+                // Bus is currently departing/arriving – divert passenger to waiting if possible
+                if (freeWaitingSlots.Count > 0) 
+                {
+                    GoToWaitingArea(passenger);
+                } 
+                else 
+                {
+                    // No waiting slot free, hold in queue until bus arrives
+                    arrivalQueue.Enqueue(passenger);
+                }
+            } 
+            else 
+            {
+                // No departure in progress – handle immediately
+                arrivalQueue.Enqueue(passenger);
                 ProcessArrivalQueue();
             }
         }
 
-        /// <summary>Processes the next arriving passenger in queue, either boarding a bus or moving to waiting area.</summary>
+        /// <summary>
+        /// Processes arriving passengers in the queue, boarding or moving them to waiting area.
+        /// </summary>
         internal void ProcessArrivalQueue() 
         {
             var busMgr = GameStateManager.Instance.BusManager;
-            if (busMgr.IsDepartureSequenceRunning || arrivalQueue.Count == 0) return;
+            if (busMgr.IsDepartureSequenceRunning) return;
 
-            Passenger p = arrivalQueue.Dequeue();
-            bool shouldBoard = busMgr.HasBus && p.Colour == busMgr.CurrentBusColor && !busMgr.CurrentBusIsFull;
-            if (shouldBoard) 
+            // Handle all queued arrivals sequentially
+            while (arrivalQueue.Count > 0) 
             {
-                // Board the passenger onto the current bus
-                busMgr.BoardPassengerOntoBus(p);
-            } 
-            else 
-            {
-                // Send the passenger to the waiting area
-                GoToWaitingArea(p);
+                Passenger p = arrivalQueue.Peek();
+                bool willBoard = busMgr.HasBus && p.Colour == busMgr.CurrentBusColor && busMgr.HasSpaceInBus;
+                // If passenger cannot board and no waiting space, stop processing until a bus departs
+                if (!willBoard && freeWaitingSlots.Count == 0) 
+                {
+                    break;
+                }
+
+                // Dequeue now that we know it can be processed
+                p = arrivalQueue.Dequeue();
+                bool shouldBoard = busMgr.HasBus && p.Colour == busMgr.CurrentBusColor && busMgr.HasSpaceInBus;
+                if (shouldBoard) 
+                {
+                    // Board the passenger onto the current bus
+                    busMgr.BoardPassengerOntoBus(p);
+                } 
+                else 
+                {
+                    // Send the passenger to the waiting area
+                    GoToWaitingArea(p);
+                }
             }
         }
 
-        /// <summary>Sends a passenger to the next available waiting slot (when they cannot board immediately).</summary>
+        /// <summary>Sends a passenger to the next available waiting slot.</summary>
         private void GoToWaitingArea(Passenger passenger) 
         {
             passenger.SetWaiting();
@@ -187,39 +216,38 @@ namespace BusJam
             });
         }
 
-        /// <summary>Checks if the game is lost (no waiting slots left and no bus departing soon).</summary>
+        /// <summary>Checks if the game is lost due to waiting area overflow.</summary>
         private void CheckForGameLost() 
         {
             var busMgr = GameStateManager.Instance.BusManager;
             if (GameStateManager.Instance.IsGameOver) return;
             if (freeWaitingSlots.Count > 0) return;
             if (busMgr.IsDepartureSequenceRunning || busMgr.PendingDepartures > 0) return;
-            // All waiting slots are full, and no bus departure will free a slot – trigger Game Over
+            // No free slots and no bus about to depart – game over
             GameStateManager.Instance.TriggerGameLost();
         }
 
-        /// <summary>Removes a passenger from active tracking (e.g., after boarding a bus).</summary>
+        /// <summary>Removes a passenger from active tracking (called after boarding a bus).</summary>
         public void RemovePassenger(Passenger passenger) 
         {
             activePassengers.Remove(passenger);
         }
 
         /// <summary>
-        /// Retrieves up to <paramref name="maxCount"/> waiting passengers of the given color for boarding, 
-        /// freeing their waiting slots in the process.
+        /// Retrieves up to <paramref name="maxCount"/> waiting passengers of the given color, freeing their slots.
         /// </summary>
         public List<Passenger> GetWaitingPassengers(ColorId color, int maxCount) 
         {
             var result = new List<Passenger>();
             int count = 0;
-            // Iterate through waiting slots to find matching passengers
+            // Find matching passengers in waiting area
             for (int slot = 0; slot < waitingOccupancy.Count && count < maxCount; slot++) 
             {
                 Passenger p = waitingOccupancy[slot];
                 if (p != null && p.Colour == color) 
                 {
                     result.Add(p);
-                    // Free this slot
+                    // Free this slot for reuse
                     waitingOccupancy[slot] = null;
                     freeWaitingSlots.Add(slot);
                     count++;
