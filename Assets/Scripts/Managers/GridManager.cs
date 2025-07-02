@@ -141,7 +141,7 @@ namespace BusJam
             {
                 // The Unity Plane primitive is 10 units x 10 units at scale=1
                 gridPlane.transform.localScale = new Vector3(cols * cellSize / 10f, 1f, (rows + 1) * cellSize / 10f);
-                gridPlane.transform.position = gridAnchor.position - new Vector3(0f, 0f, 1f + 0.5f * cellSize);
+                gridPlane.transform.position = gridAnchor.position - new Vector3(0f, 0f, (rows - 1) * cellSize / 2f);
             }
         }
 

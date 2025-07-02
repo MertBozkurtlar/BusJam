@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace BusJam 
@@ -9,8 +10,9 @@ namespace BusJam
     /// Uses events to communicate with managers.
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class Passenger : MonoBehaviour 
+    public class Passenger : MonoBehaviour
     {
+        [SerializeField] private float passengerHeight = 1f;
         public int Row { get; private set; }
         public int Col { get; private set; }
         public ColorId Colour { get; private set; }
@@ -35,6 +37,7 @@ namespace BusJam
             {
                 rend.material.color = colour.ToUnityColor();
             }
+            transform.position += Vector3.up * passengerHeight/2;
         }
 
         /// <summary>Marks this passenger as waiting (in the waiting area) so they cannot be clicked again.</summary>
@@ -63,8 +66,9 @@ namespace BusJam
         }
 
         // Coroutine to move along a multi-step grid path
-        private System.Collections.IEnumerator PathRoutine(IReadOnlyList<Vector2Int> path, float speed) 
+        private IEnumerator PathRoutine(IReadOnlyList<Vector2Int> path, float speed) 
         {
+            this.SetWaiting();
             foreach (var step in path) 
             {
                 Vector3 worldPos = gridManager.GridToWorld(step.x, step.y);
@@ -78,13 +82,25 @@ namespace BusJam
         }
 
         // Coroutine for smooth movement to a single point
-        private System.Collections.IEnumerator MoveToPointRoutine(Vector3 target, float speed, Action onDone) 
+        private IEnumerator MoveToPointRoutine(Vector3 target, float speed, Action onDone) 
         {
-            while (Vector3.Distance(transform.position, target) > 0.01f) 
+            // Lock the Y position
+            float originalY = transform.position.y;
+
+            // Create a new target with the same Y as the original position
+            Vector3 targetNoY = new Vector3(target.x, originalY, target.z);
+
+            while (Vector3.Distance(new Vector3(transform.position.x, originalY, transform.position.z), targetNoY) > 0.01f) 
             {
-                transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+                Vector3 newPosition = Vector3.MoveTowards(
+                    new Vector3(transform.position.x, originalY, transform.position.z),
+                    targetNoY,
+                    speed * Time.deltaTime
+                );
+                transform.position = new Vector3(newPosition.x, originalY, newPosition.z);
                 yield return null;
             }
+
             onDone?.Invoke();
         }
     }

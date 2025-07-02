@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   timeLimit: 10
   waitingAreaSize: 5
-  rows: 6
-  cols: 6
+  rows: 3
+  cols: 3
   cells:
   - type: 0
     colour: 0
@@ -23,61 +23,7 @@ MonoBehaviour:
     colour: 0
   - type: 0
     colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
   - type: 2
-    colour: 1
-  - type: 2
-    colour: 1
-  - type: 2
-    colour: 1
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
     colour: 0
   - type: 0
     colour: 0

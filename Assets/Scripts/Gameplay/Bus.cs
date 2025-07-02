@@ -55,7 +55,7 @@ namespace BusJam
             for (int i = 0; i < count; i++)
             {
                 var head = Instantiate(passengerHeadPrefab, transform);
-                head.transform.localPosition = new Vector3(startX + i * spacing, 1.5f, 0f);
+                head.transform.localPosition = new Vector3(startX + i * spacing, 1.5f, -0.5f);
                 passengerHeads.Add(head);
             }
         }

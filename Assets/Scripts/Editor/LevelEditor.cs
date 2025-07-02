@@ -28,7 +28,7 @@ public class LevelDesignerWindow : EditorWindow
     /* instance state  */
     private LevelData        level;
     private SerializedObject so;
-    private SerializedProperty rowsProp, colsProp, cellsProp, busesProp, timeLimitProp;
+    private SerializedProperty rowsProp, colsProp, cellsProp, busesProp, timeLimitProp, waitingAreaSizeProp;
     private ReorderableList  busList;
 
     // Current paint brush
@@ -61,6 +61,7 @@ public class LevelDesignerWindow : EditorWindow
 
         EditorGUI.BeginChangeCheck();
         EditorGUILayout.PropertyField(timeLimitProp);
+        EditorGUILayout.PropertyField(waitingAreaSizeProp);
         EditorGUILayout.PropertyField(rowsProp);
         EditorGUILayout.PropertyField(colsProp);
 
@@ -79,12 +80,14 @@ public class LevelDesignerWindow : EditorWindow
     {
         if (level == null) { so = null; return; }
 
-        so           = new SerializedObject(level);
-        rowsProp     = so.FindProperty(nameof(LevelData.rows));
-        colsProp     = so.FindProperty(nameof(LevelData.cols));
-        cellsProp    = so.FindProperty(nameof(LevelData.cells));
-        busesProp    = so.FindProperty(nameof(LevelData.buses));
-        timeLimitProp= so.FindProperty(nameof(LevelData.timeLimit));
+        so = new SerializedObject(level);
+        
+        rowsProp            = so.FindProperty(nameof(LevelData.rows));
+        colsProp            = so.FindProperty(nameof(LevelData.cols));
+        cellsProp           = so.FindProperty(nameof(LevelData.cells));
+        busesProp           = so.FindProperty(nameof(LevelData.buses));
+        timeLimitProp       = so.FindProperty(nameof(LevelData.timeLimit));
+        waitingAreaSizeProp = so.FindProperty(nameof(LevelData.waitingAreaSize));
 
         busList = new ReorderableList(so, busesProp, true, true, true, true)
         {
