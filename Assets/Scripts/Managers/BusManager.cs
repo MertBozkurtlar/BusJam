@@ -31,12 +31,24 @@ namespace BusJam
         /// <summary>Initializes the bus queue for a new level, spawning up to 3 initial buses.</summary>
         public void InitializeBuses(ColorId[] busColorSequence) 
         {
+            Reset(); // Clear existing buses and queues
+
             // Create a container object for buses
             busContainer = new GameObject("Buses").transform;
             busContainer.SetParent(transform);
 
-            upcomingBusColors.Clear();
-            buses.Clear();
+            if (busPrefab == null)
+            {
+                Debug.LogError("Bus Prefab is not assigned in BusManager!");
+                return;
+            }
+
+            if (busColorSequence == null || busColorSequence.Length == 0)
+            {
+                Debug.LogWarning("Bus color sequence is empty. No buses will be spawned.");
+                return;
+            }
+
             foreach (var color in busColorSequence) 
             {
                 upcomingBusColors.Enqueue(color);
@@ -97,8 +109,7 @@ namespace BusJam
             if (isDepartureSequenceRunning || pendingDepartures == 0) return;
             isDepartureSequenceRunning = true;
             pendingDepartures--;
-
-            if (buses.Count == 0) return;
+            
             Bus departingBus = buses.Dequeue();
             // Check win condition: no more buses remaining to serve and none upcoming
             if (buses.Count == 0 && upcomingBusColors.Count == 0) 
@@ -156,6 +167,26 @@ namespace BusJam
                 // Immediately board each waiting passenger (their slots have been freed)
                 BoardPassengerOntoBus(passenger);
             }
+        }
+
+        /// <summary>Resets the BusManager, destroying all active buses and clearing queues.</summary>
+        public void Reset()
+        {
+            // Destroy all existing bus GameObjects
+            if (busContainer != null)
+            {
+                foreach (Transform child in busContainer)
+                {
+                    Destroy(child.gameObject);
+                }
+                Destroy(busContainer.gameObject);
+                busContainer = null;
+            }
+
+            upcomingBusColors.Clear();
+            buses.Clear();
+            isDepartureSequenceRunning = false;
+            pendingDepartures = 0;
         }
     }
 }

@@ -10,24 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3dc432bceb719474ebd9008837c16412, type: 3}
-  m_Name: Level2
+  m_Name: Level3
   m_EditorClassIdentifier: 
-  timeLimit: 50
+  timeLimit: 40
   waitingAreaSize: 5
-  rows: 5
-  cols: 5
+  rows: 7
+  cols: 7
   cells:
+  - type: 1
+    colour: 0
+  - type: 1
+    colour: 0
   - type: 0
     colour: 0
   - type: 2
     colour: 1
-  - type: 2
-    colour: 2
-  - type: 2
-    colour: 1
   - type: 0
-    colour: 0
-  - type: 2
     colour: 0
   - type: 1
     colour: 0
@@ -36,35 +34,85 @@ MonoBehaviour:
   - type: 1
     colour: 0
   - type: 2
-    colour: 0
+    colour: 3
   - type: 2
-    colour: 2
+    colour: 3
+  - type: 2
+    colour: 3
+  - type: 2
+    colour: 3
+  - type: 2
+    colour: 3
+  - type: 1
+    colour: 0
   - type: 2
     colour: 2
   - type: 2
     colour: 1
+  - type: 0
+    colour: 0
+  - type: 1
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 1
+  - type: 2
+    colour: 0
   - type: 2
     colour: 2
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 1
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 0
   - type: 2
     colour: 2
   - type: 0
     colour: 0
+  - type: 0
+    colour: 0
+  - type: 1
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
   - type: 2
     colour: 0
+  - type: 1
+    colour: 0
+  - type: 0
+    colour: 0
   - type: 0
     colour: 0
   - type: 2
-    colour: 2
+    colour: 3
   - type: 0
     colour: 0
   - type: 0
     colour: 0
-  - type: 0
+  - type: 1
     colour: 0
-  - type: 0
+  - type: 1
     colour: 0
-  - type: 0
+  - type: 1
     colour: 0
-  - type: 0
+  - type: 2
+    colour: 1
+  - type: 2
+    colour: 1
+  - type: 2
+    colour: 1
+  - type: 1
     colour: 0
-  buses: 02000000000000000100000002000000
+  - type: 1
+    colour: 0
+  buses: 020000000300000001000000000000000100000003000000

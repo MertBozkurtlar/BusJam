@@ -60,9 +60,15 @@ namespace BusJam
         }
 
         /// <summary>Moves the passenger towards a single target point in world space.</summary>
-        public void MoveToPoint(Vector3 target, float speed = 4f, Action onDone = null) 
+        Coroutine currentMove;
+        public void MoveToPoint(Vector3 target, float speed = 4f, Action onDone = null)
         {
-            StartCoroutine(MoveToPointRoutine(target, speed, onDone));
+            if (currentMove != null) StopCoroutine(currentMove);
+            currentMove = StartCoroutine(MoveToPointRoutine(target, speed, () =>
+            {
+                currentMove = null;
+                onDone?.Invoke();
+            }));
         }
 
         // Coroutine to move along a multi-step grid path

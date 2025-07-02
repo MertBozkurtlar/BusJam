@@ -152,5 +152,19 @@ namespace BusJam
         
         // Expose cell size for use by other systems (e.g., PassengerManager waiting area layout)
         public float CellSize => cellSize;
+
+        /// <summary>Resets the GridManager, destroying all grid tiles and clearing the grid state.</summary>
+        public void Reset()
+        {
+            // Destroy all existing grid tile GameObjects
+            Transform gridParent = transform.Find("GridTiles");
+            if (gridParent != null)
+            {
+                Destroy(gridParent.gameObject);
+            }
+
+            // Clear the internal grid state
+            gridState = null;
+        }
     }
 }

@@ -37,6 +37,30 @@ namespace BusJam
             Passenger.OnReachedExitRow -= HandlePassengerArrived;
         }
 
+        /// <summary>Resets the PassengerManager, destroying all active passengers and clearing waiting area data.</summary>
+        public void Reset()
+        {
+            // Destroy all active passenger GameObjects
+            foreach (var passenger in activePassengers)
+            {
+                if (passenger != null) Destroy(passenger.gameObject);
+            }
+            activePassengers.Clear();
+
+            // Clear waiting area data
+            arrivalQueue.Clear();
+            freeWaitingSlots.Clear();
+            waitingPositions.Clear();
+            waitingOccupancy.Clear();
+
+            // Destroy waiting area tiles if they exist
+            Transform waitingParent = transform.Find("WaitingArea");
+            if (waitingParent != null)
+            {
+                Destroy(waitingParent.gameObject);
+            }
+        }
+
         /// <summary>Spawns all passengers defined in the level data onto the grid.</summary>
         public void SpawnPassengers(LevelData levelData) 
         {

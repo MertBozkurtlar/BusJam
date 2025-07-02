@@ -33,12 +33,20 @@ public class LevelDesignerWindow : EditorWindow
 
     // Current paint brush
     private Cell brush = new() { type = CellType.Empty, colour = 0 };
+    
+    private Vector2 scrollPosition;
 
     /* GUI */
     private void OnGUI()
     {
+        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+
         DrawHeader();
-        if (level == null) return;
+        if (level == null)
+        {
+            EditorGUILayout.EndScrollView();
+            return;
+        }
 
         GUILayout.Space(3);
         DrawGrid();
@@ -46,6 +54,8 @@ public class LevelDesignerWindow : EditorWindow
         DrawPalette();
         GUILayout.Space(10);
         DrawBusQueue();
+
+        EditorGUILayout.EndScrollView();
     }
     
     private void DrawHeader()

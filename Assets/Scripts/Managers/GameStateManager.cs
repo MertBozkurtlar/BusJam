@@ -71,6 +71,11 @@ namespace BusJam
             TimeLeft = currentLevelData.timeLimit;
             state = GameState.Start;
 
+            // Reset managers before building new level elements
+            passengerManager.Reset();
+            busManager.Reset();
+            gridManager.Reset(); // Assuming GridManager also needs a reset for its grid elements
+
             // Build the scene elements via the managers
             gridManager.BuildGrid(currentLevelData);
             passengerManager.SpawnPassengers(currentLevelData);

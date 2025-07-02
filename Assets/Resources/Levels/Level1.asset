@@ -12,11 +12,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dc432bceb719474ebd9008837c16412, type: 3}
   m_Name: Level1
   m_EditorClassIdentifier: 
-  timeLimit: 50
+  timeLimit: 60
   waitingAreaSize: 5
-  rows: 6
-  cols: 6
+  rows: 5
+  cols: 5
   cells:
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 2
+    colour: 0
+  - type: 2
+    colour: 0
+  - type: 2
+    colour: 0
+  - type: 0
+    colour: 0
+  - type: 0
+    colour: 0
   - type: 2
     colour: 1
   - type: 2
@@ -27,36 +49,8 @@ MonoBehaviour:
     colour: 0
   - type: 0
     colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
   - type: 2
-    colour: 0
-  - type: 2
-    colour: 0
-  - type: 2
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 1
-    colour: 0
-  - type: 1
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
+    colour: 2
   - type: 2
     colour: 2
   - type: 2
@@ -71,22 +65,6 @@ MonoBehaviour:
     colour: 0
   - type: 0
     colour: 0
-  - type: 2
-    colour: 2
   - type: 0
     colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  - type: 0
-    colour: 0
-  buses: 020000000000000001000000
+  buses: 000000000100000002000000

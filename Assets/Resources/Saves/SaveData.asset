@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3589ed3400cb402990002e2f82f3703, type: 3}
   m_Name: SaveData
   m_EditorClassIdentifier: 
+  maxLevel: 5
   currentLevel: 1
